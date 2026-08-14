@@ -1,0 +1,29 @@
+drug_a;drug_b;niveau;description
+paracetamol;ibuprofene;mineur;Augmentation du risque d'hypoacousie
+paracetamol;warfarin;modéré;Augmentation de l'effet anticoagulant
+ibuprofene;aspirine;modéré;Risque hémorragique digestif accru
+ibuprofene;warfarin;sévère;Risque hémorragique majeur
+ibuprofene;ramipril;modéré;Réduction de l'effet antihypertenseur
+ibuprofene;furosemide;modéré;Réduction de l'effet diurétique
+amoxicilline;methotrexate;sévère;Toxicité du méthotrexate accrue
+amoxicilline;allopurinol;modéré;Risque de réaction cutanée
+simvastatine;amlodipine;modéré;Augmentation du risque de myopathie
+simvastatine;clarithromycine;sévère;Risque de rhabdomyolyse
+simvastatine;fluconazole;sévère;Risque de rhabdomyolyse
+atorvastatine;clarithromycine;modéré;Augmentation du risque de myopathie
+metformine;iode;sévère;Risque d'acidose lactique
+metformine;furosemide;modéré;Risque d'acidose lactique
+metformine;ramipril;mineur;Potentialisation de l'effet hypoglycémiant
+ramipril;spironolactone;sévère;Risque d'hyperkaliémie
+ramipril;furosemide;mineur;Potentialisation de l'effet hypotenseur
+furosemide;spironolactone;modéré;Déséquilibre électrolytique
+furosemide;digoxine;modéré;Risque de toxicité digitalique
+warfarin;aspirine;sévère;Risque hémorragique majeur
+warfarin;clopidogrel;sévère;Risque hémorragique majeur
+warfarin;amoxicilline;modéré;Augmentation de l'effet anticoagulant
+clopidogrel;omeprazole;modéré;Réduction de l'effet antiagrégant plaquettaire
+clopidogrel;aspirine;mineur;Synergie antiagrégante plaquettaire
+omeprazole;diazepam;modéré;Diminution du métabolisme du diazépam
+amitriptyline;warfarin;modéré;Augmentation de l'effet anticoagulant
+amitriptyline;clonazepam;modéré;Sédation excessive
+metoclopramide;paracetamol;modéré;Augmentation de l'absorption du paracétamol

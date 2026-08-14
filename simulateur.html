@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Moniteur Multiparamétrique — Urgences OS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="/static/js/react.development.js" crossorigin></script>
+<script src="/static/js/react-dom.development.js" crossorigin></script>
+<script src="/static/js/babel.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const HeartIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+  </svg>
+);
+
+const ActivityIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+  </svg>
+);
+
+const ShareIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+    <polyline points="16 6 12 2 8 6"></polyline>
+    <line x1="12" y1="2" x2="12" y2="15"></line>
+  </svg>
+);
+
+const StopIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+  </svg>
+);
+
+const EditableValue = ({ value, onChange, min, max, className }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [localValue, setLocalValue] = useState(value.toString());
+
+  useEffect(() => { setLocalValue(value.toString()); }, [value]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') { save(); }
+    else if (e.key === 'Escape') { setIsEditing(false); setLocalValue(value.toString()); }
+  };
+
+  const save = () => {
+    let num = parseFloat(localValue);
+    if (isNaN(num)) num = value;
+    num = Math.max(min, Math.min(max, num));
+    onChange(num);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <input type="number" value={localValue} onChange={(e) => setLocalValue(e.target.value)}
+        onBlur={save} onKeyDown={handleKeyDown}
+        className="bg-slate-900 border-b-2 border-white focus:outline-none focus:border-blue-500 rounded px-1 w-20 text-center font-mono inline-block text-white text-xl"
+        autoFocus min={min} max={max} />
+    );
+  }
+
+  return (
+    <span onClick={() => setIsEditing(true)}
+      className={'cursor-pointer hover:bg-white/10 rounded px-1 transition-colors duration-150 inline-block border-b border-dashed border-white/30 hover:border-white/90 ' + className}
+      title="Cliquez pour modifier directement">
+      {value}
+    </span>
+  );
+};
+
+function getECG1Value(p) {
+  if (p < 0 || p >= 1) return 0;
+  let val = 0;
+  if (p >= 0.0 && p < 0.18) { val += 0.1 * Math.sin((p / 0.18) * Math.PI); }
+  if (p >= 0.22 && p < 0.25) { val -= 0.15 * Math.sin(((p - 0.22) / 0.03) * Math.PI); }
+  if (p >= 0.25 && p < 0.275) { val += 1.4 * Math.sin(((p - 0.25) / 0.025) * (Math.PI / 2)); }
+  else if (p >= 0.275 && p < 0.30) { val += 1.4 - 1.65 * Math.sin(((p - 0.275) / 0.025) * (Math.PI / 2)); }
+  if (p >= 0.30 && p < 0.35) { val += -0.25 + 0.25 * Math.sin(((p - 0.30) / 0.05) * (Math.PI / 2)); }
+  if (p >= 0.45 && p < 0.85) { val += 0.28 * Math.sin(((p - 0.45) / 0.40) * Math.PI); }
+  if (p >= 0.85 && p < 0.95) { val += 0.03 * Math.sin(((p - 0.85) / 0.10) * Math.PI); }
+  return val;
+}
+
+function getECG2Value(p) {
+  if (p < 0 || p >= 1) return 0;
+  let val = 0;
+  if (p >= 0.0 && p < 0.18) { val += 0.12 * Math.sin((p / 0.18) * Math.PI); }
+  if (p >= 0.21 && p < 0.24) { val -= 0.1 * Math.sin(((p - 0.21) / 0.03) * Math.PI); }
+  if (p >= 0.24 && p < 0.265) { val += 1.6 * Math.sin(((p - 0.24) / 0.025) * (Math.PI / 2)); }
+  else if (p >= 0.265 && p < 0.29) { val += 1.6 - 1.8 * Math.sin(((p - 0.265) / 0.025) * (Math.PI / 2)); }
+  if (p >= 0.29 && p < 0.34) { val += -0.2 + 0.2 * Math.sin(((p - 0.29) / 0.05) * (Math.PI / 2)); }
+  if (p >= 0.43 && p < 0.83) { val += 0.35 * Math.sin(((p - 0.43) / 0.40) * Math.PI); }
+  return val;
+}
+
+const API_BASE = 'http://127.0.0.1:8000';
+const TOKEN = 'device_bridge_token_2026';
+
+const App = () => {
+  const [patients, setPatients] = useState([]);
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [fc, setFc] = useState(75);
+  const [tas, setTas] = useState(120);
+  const [tad, setTad] = useState(80);
+  const [spo2, setSpo2] = useState(98);
+  const [temp, setTemp] = useState(36.7);
+  const [streaming, setStreaming] = useState(false);
+  const [streamMsg, setStreamMsg] = useState('');
+  const [ecgFilter, setEcgFilter] = useState('moniteur');
+  const [currentTime, setCurrentTime] = useState('');
+  const [heartFlashed, setHeartFlashed] = useState(false);
+  const [resizeKey, setResizeKey] = useState(0);
+
+  const ecgCanvasRef = useRef(null);
+  const abpCanvasRef = useRef(null);
+  const spo2CanvasRef = useRef(null);
+  const tempCanvasRef = useRef(null);
+
+  const targetParams = useRef({ fc, tas, tad, spo2, temp });
+  const streamInterval = useRef(null);
+  const streamCount = useRef(0);
+  const latestVitals = useRef({ fc: 75, tas: 120, tad: 80, spo2: 98, temp: 36.7 });
+
+  const drawState = useRef({
+    x: 0, timeSinceLastBeat: 0,
+    activeFc: 75, activeTas: 120, activeTad: 80, activeSpo2: 98, activeTemp: 36.7,
+    prevY_ecg1: null, prevY_ecg2: null, prevY_abp: null, prevY_pleth: null, prevY_temp: null,
+  });
+
+  useEffect(() => { targetParams.current = { fc, tas, tad, spo2, temp }; }, [fc, tas, tad, spo2, temp]);
+  useEffect(() => { latestVitals.current = { fc, tas, tad, spo2, temp }; }, [fc, tas, tad, spo2, temp]);
+
+  useEffect(() => {
+    const updateClock = () => {
+      const d = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      setCurrentTime('2026-06-11  ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()));
+    };
+    updateClock();
+    const interval = setInterval(updateClock, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => { setResizeKey(prev => prev + 1); };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    fetch(API_BASE + '/sejours/installes', { headers: { 'Authorization': 'Bearer ' + TOKEN } })
+      .then(r => r.json())
+      .then(data => { setPatients(data); })
+      .catch(() => {});
+  }, []);
+
+  const getSejourId = () => {
+    const p = patients[selectedIdx];
+    return p ? p.sejour_id : null;
+  };
+
+  const buildHL7_ORU_R01 = (sejourId, patient, vitals) => {
+    const pad = (n) => n.toString().padStart(2, '0');
+    const d = new Date();
+    const ts = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+    const msgId = 'MSG' + ts + Math.floor(100 + Math.random() * 900);
+    const pName = (patient?.patient?.nom || patient?.nom || 'PATIENT').toUpperCase();
+    const pPrenom = (patient?.patient?.prenom || patient?.prenom || 'URGENCES').toUpperCase();
+    const pId = patient?.patient?.patient_id || patient?.patient_id || sejourId;
+    const litNum = patient?.lit?.numero_lit || patient?.numero_lit || 'BOX-1';
+
+    const segments = [
+      `MSH|^~\\&|MONITOR_PHILIPS_MP50|URGENCES_SIMULATOR|URGENCES_SERVER|CHU_HOSPITAL|${ts}||ORU^R01|${msgId}|P|2.5.1`,
+      `PID|1||PAT_${pId}^^^URGENCES||${pName}^${pPrenom}|||U`,
+      `PV1|1|E|${litNum}^URGENCES|||||||||||||||SEJ_${sejourId}`,
+      `OBR|1||MON_${msgId}|VITAL_SIGNS_PANEL^Vital Signs Monitoring^LN|||${ts}`,
+      `OBX|1|NM|8867-4^Heart rate^LN||${vitals.fc}|/min|60-100|N|||F`,
+      `OBX|2|NM|8480-6^Systolic blood pressure^LN||${vitals.ta_systolique}|mm[Hg]|90-140|N|||F`,
+      `OBX|3|NM|8462-4^Diastolic blood pressure^LN||${vitals.ta_diastolique}|mm[Hg]|60-90|N|||F`,
+      `OBX|4|NM|2708-6^Oxygen saturation in Arterial blood^LN||${vitals.spo2}|%|95-100|N|||F`,
+      `OBX|5|NM|8310-5^Body temperature^LN||${vitals.temperature}|Cel|36.0-37.5|N|||F`,
+      `OBX|6|NM|9279-1^Respiratory rate^LN||${vitals.frequence_respiratoire}|/min|12-20|N|||F`,
+      `OBX|7|NM|35088-4^Glasgow Coma Scale total score^LN||${vitals.glasgow}|score|3-15|N|||F`,
+      `OBX|8|NM|38208-5^Pain severity - 0-10 verbal scale^LN||${vitals.douleur}|score|0-10|N|||F`,
+      `OBX|9|ST|8884-9^Heart rate rhythm^LN||${vitals.rythme_cardiaque}|||N|||F`
+    ];
+    return segments.join('\r');
+  };
+
+  const toggleStreaming = () => {
+    if (streaming) {
+      clearInterval(streamInterval.current);
+      streamInterval.current = null;
+      setStreaming(false);
+      setStreamMsg('Streaming arrêté');
+      setTimeout(() => setStreamMsg(''), 3000);
+    } else {
+      const sid = getSejourId();
+      if (!sid) { setStreamMsg('Aucun patient sélectionné'); setTimeout(() => setStreamMsg(''), 3000); return; }
+      streamCount.current = 0;
+      const send = () => {
+        const vals = latestVitals.current;
+        const v = { fc: parseInt(vals.fc), ta_systolique: parseInt(vals.tas), ta_diastolique: parseInt(vals.tad), spo2: parseInt(vals.spo2), temperature: parseFloat(vals.temp), glasgow: 15, douleur: 0, frequence_respiratoire: 16, rythme_cardiaque: 'sinusal' };
+        const hl7Msg = buildHL7_ORU_R01(sid, patients[selectedIdx], v);
+        fetch(API_BASE + '/api/hl7/oru-r01', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'text/plain; charset=utf-8' },
+          body: hl7Msg,
+        }).then(r => {
+          streamCount.current++;
+          if (r.ok) setStreamMsg('HL7 ORU^R01 #' + streamCount.current + ' OK');
+          else setStreamMsg('Erreur HL7 ' + r.status);
+        }).catch(() => { setStreamMsg('Erreur réseau'); });
+        setTimeout(() => setStreamMsg(''), 2000);
+      };
+      send();
+      streamInterval.current = setInterval(send, 5000);
+      setStreaming(true);
+      setStreamMsg('Streaming démarré');
+      setTimeout(() => setStreamMsg(''), 2000);
+    }
+  };
+
+  const handleFcChange = (val) => setFc(Math.max(0, Math.min(220, fc + val)));
+  const handleSpo2Change = (val) => setSpo2(Math.max(0, Math.min(100, spo2 + val)));
+  const handleTempChange = (val) => setTemp(parseFloat(Math.max(30.0, Math.min(43.0, temp + val)).toFixed(1)));
+  const handleTasChange = (val) => { const n = Math.max(0, Math.min(245, tas + val)); if (n > tad + 10 || n === 0) setTas(n); };
+  const handleTadChange = (val) => { const n = Math.max(0, Math.min(130, tad + val)); if (n < tas - 10 || tas === 0) setTad(n); };
+  const handleTasDirect = (val) => { if (val > tad + 5 || val === 0) setTas(val); };
+  const handleTadDirect = (val) => { if (val < tas - 5 || tas === 0) setTad(val); };
+
+  useEffect(() => {
+    const canvases = [
+      { ref: ecgCanvasRef, key: 'ecg' },
+      { ref: abpCanvasRef, key: 'abp' },
+      { ref: spo2CanvasRef, key: 'spo2' },
+      { ref: tempCanvasRef, key: 'temp' }
+    ];
+
+    const ctxs = canvases.map(c => {
+      const el = c.ref.current;
+      if (!el) return null;
+      const ctx = el.getContext('2d');
+      return { el, ctx, key: c.key };
+    }).filter(Boolean);
+
+    let animationId;
+    let lastTime = performance.now();
+
+    const loop = (timestamp) => {
+      let dt = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+      if (dt > 0.1) dt = 0.1;
+
+      const ds = drawState.current;
+      const target = targetParams.current;
+      const lerp = (start, end, rate) => start + (end - start) * rate;
+      const lerpRate = 0.08;
+
+      ds.activeFc = lerp(ds.activeFc, target.fc, lerpRate);
+      ds.activeTas = lerp(ds.activeTas, target.tas, lerpRate);
+      ds.activeTad = lerp(ds.activeTad, target.tad, lerpRate);
+      ds.activeSpo2 = lerp(ds.activeSpo2, target.spo2, lerpRate);
+      ds.activeTemp = lerp(ds.activeTemp, target.temp, lerpRate);
+
+      const beatDuration = 0.45;
+      if (ds.activeFc > 0) {
+        ds.timeSinceLastBeat += dt;
+        const cycleTotalTime = 60 / ds.activeFc;
+        if (ds.timeSinceLastBeat >= cycleTotalTime) {
+          ds.timeSinceLastBeat = 0;
+          setHeartFlashed(true);
+          setTimeout(() => setHeartFlashed(false), 85);
+        }
+      } else {
+        ds.timeSinceLastBeat = 999;
+      }
+
+      ctxs.forEach(({ el, ctx, key }) => {
+        const parent = el.parentElement;
+        const displayWidth = Math.max(100, parent ? parent.clientWidth : el.clientWidth);
+        const displayHeight = Math.max(50, parent ? parent.clientHeight : el.clientHeight);
+        const dpr = window.devicePixelRatio || 1;
+        const targetWidth = Math.round(displayWidth * dpr);
+        const targetHeight = Math.round(displayHeight * dpr);
+
+        if (el.width !== targetWidth || el.height !== targetHeight) {
+          el.width = targetWidth;
+          el.height = targetHeight;
+          ctx.scale(dpr, dpr);
+          if (key === 'ecg') { ds.prevY_ecg1 = null; ds.prevY_ecg2 = null; }
+          else if (key === 'abp') { ds.prevY_abp = null; }
+          else if (key === 'spo2') { ds.prevY_pleth = null; }
+          else if (key === 'temp') { ds.prevY_temp = null; }
+        }
+
+        const W = displayWidth;
+        const H = displayHeight;
+        const sweepDuration = 4.2;
+        const speedX = W / sweepDuration;
+        let prevX = ds.x;
+
+        if (key === 'ecg') {
+          ds.x += speedX * dt;
+          if (ds.x >= W) { ds.x = 0; prevX = 0; ds.prevY_ecg1 = null; ds.prevY_ecg2 = null; ds.prevY_abp = null; ds.prevY_pleth = null; ds.prevY_temp = null; }
+        }
+        const activeX = ds.x;
+        const sliceWidth = 18;
+
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(activeX, 0, sliceWidth, H);
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+        ctx.lineWidth = 0.5;
+        const gridSpacing = 15;
+        const startGridX = Math.floor(activeX / gridSpacing) * gridSpacing;
+        ctx.beginPath();
+        for (let gx = startGridX; gx < activeX + sliceWidth; gx += gridSpacing) {
+          if (gx >= activeX && gx < activeX + sliceWidth && gx < W) { ctx.moveTo(gx, 0); ctx.lineTo(gx, H); }
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        for (let gy = 0; gy < H; gy += gridSpacing) { ctx.moveTo(activeX, gy); ctx.lineTo(Math.min(W, activeX + sliceWidth), gy); }
+        ctx.stroke();
+
+        let noise = 0;
+        if (ecgFilter === 'diagnostic' && ds.activeFc > 0) noise = (Math.random() - 0.5) * 0.05 + Math.sin(timestamp * 0.0035) * 0.04;
+
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        if (key === 'ecg') {
+          const ecg1_center = H * 0.28;
+          const ecg2_center = H * 0.72;
+          let ecg1_val = 0, ecg2_val = 0;
+          if (ds.activeFc > 0) { const p = ds.timeSinceLastBeat / beatDuration; ecg1_val = getECG1Value(p) + noise; ecg2_val = getECG2Value(p) + noise; }
+          else { ecg1_val = (Math.random() - 0.5) * 0.02; ecg2_val = (Math.random() - 0.5) * 0.02; }
+          const y_ecg1 = ecg1_center - ecg1_val * (H * 0.2);
+          const y_ecg2 = ecg2_center - ecg2_val * (H * 0.2);
+          if (ds.prevY_ecg1 !== null) {
+            ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2.0; ctx.beginPath(); ctx.moveTo(prevX, ds.prevY_ecg1); ctx.lineTo(activeX, y_ecg1); ctx.stroke();
+            ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 2.0; ctx.beginPath(); ctx.moveTo(prevX, ds.prevY_ecg2); ctx.lineTo(activeX, y_ecg2); ctx.stroke();
+          }
+          ds.prevY_ecg1 = y_ecg1; ds.prevY_ecg2 = y_ecg2;
+        } else if (key === 'abp') {
+          let pressureVal = 0;
+          if (ds.activeFc > 0) {
+            const delay = 0.08;
+            if (ds.timeSinceLastBeat >= delay) {
+              const p_abp = (ds.timeSinceLastBeat - delay) / 0.5;
+              if (p_abp < 1) {
+                let normVal = 0;
+                if (p_abp < 0.15) { normVal = Math.sin((p_abp / 0.15) * (Math.PI / 2)); }
+                else if (p_abp < 0.45) { normVal = 0.7 * Math.cos(((p_abp - 0.15) / 0.30) * (Math.PI / 2)) + 0.3; }
+                else if (p_abp < 0.52) { normVal = 0.3 - 0.08 * Math.sin(((p_abp - 0.45) / 0.07) * Math.PI); }
+                else if (p_abp < 0.65) { normVal = 0.22 + 0.06 * Math.sin(((p_abp - 0.52) / 0.13) * Math.PI); }
+                else { normVal = 0.22 * Math.exp(-2.0 * ((p_abp - 0.65) / 0.35)); }
+                pressureVal = ds.activeTad + (ds.activeTas - ds.activeTad) * normVal;
+              } else { pressureVal = ds.activeTad; }
+            } else { pressureVal = ds.activeTad; }
+          } else { pressureVal = 0; }
+          const padY = H * 0.12;
+          const usableH = H - padY * 2;
+          const y_abp = H - padY - (pressureVal / 200) * usableH;
+          if (ds.prevY_abp !== null) { ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(prevX, ds.prevY_abp); ctx.lineTo(activeX, y_abp); ctx.stroke(); }
+          ds.prevY_abp = y_abp;
+        } else if (key === 'spo2') {
+          let plethVal = 0;
+          if (ds.activeFc > 0 && ds.activeSpo2 > 0) {
+            const delay = 0.16;
+            if (ds.timeSinceLastBeat >= delay) {
+              const p_pleth = (ds.timeSinceLastBeat - delay) / 0.55;
+              if (p_pleth < 1) {
+                let normVal = 0;
+                if (p_pleth < 0.18) { normVal = Math.sin((p_pleth / 0.18) * (Math.PI / 2)); }
+                else if (p_pleth < 0.55) { const sub = (p_pleth - 0.18) / 0.37; normVal = 0.5 * Math.cos(sub * Math.PI) + 0.5; if (sub > 0.3 && sub < 0.7) normVal += 0.04 * Math.sin(((sub - 0.3) / 0.4) * Math.PI); }
+                else { const sub = (p_pleth - 0.55) / 0.45; normVal = 0.16 * Math.exp(-2.4 * sub); }
+                plethVal = normVal * (ds.activeSpo2 / 100);
+              }
+            }
+          }
+          const y_pleth = H * 0.8 - plethVal * (H * 0.6);
+          if (ds.prevY_pleth !== null) { ctx.strokeStyle = '#06b6d4'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(prevX, ds.prevY_pleth); ctx.lineTo(activeX, y_pleth); ctx.stroke(); }
+          ds.prevY_pleth = y_pleth;
+        } else if (key === 'temp') {
+          const baseShift = (ds.activeTemp - 37) * 4;
+          const y_temp = H * 0.5 - baseShift + (Math.random() - 0.5) * 0.15;
+          if (ds.prevY_temp !== null) { ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(prevX, ds.prevY_temp); ctx.lineTo(activeX, y_temp); ctx.stroke(); }
+          ds.prevY_temp = y_temp;
+        }
+      });
+      animationId = requestAnimationFrame(loop);
+    };
+    animationId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animationId);
+  }, [ecgFilter, selectedIdx, resizeKey]);
+
+  const isFcCritical = fc > 0 && (fc > 130 || fc < 45);
+  const isBpCritical = tas > 0 && (tas < 90 || tas > 165 || tad > 95);
+  const isSpo2Critical = spo2 > 0 && spo2 < 90;
+
+  const activePatient = patients[selectedIdx] || { patient: { nom: 'Inconnu', prenom: '' }, lit: { numero_lit: '-' } };
+  const patientName = activePatient.patient ? activePatient.patient.prenom + ' ' + activePatient.patient.nom : 'Patient inconnu';
+  const patientLabel = activePatient.lit ? 'Lit ' + (activePatient.lit.numero_lit || '-') : '-';
+
+  return (
+    <div className="flex flex-col h-screen max-h-screen bg-slate-950 text-white p-2 md:p-4 font-sans select-none antialiased relative overflow-hidden">
+
+      <div className="text-center shrink-0 mb-2">
+        <h1 className="text-lg md:text-xl font-black tracking-wider text-slate-100 uppercase flex items-center justify-center gap-2">
+          <ActivityIcon className="text-emerald-500 animate-pulse h-5 w-5 md:h-6 md:w-6" />
+          Moniteur Multiparamétrique — Urgences OS
+        </h1>
+        <p className="text-[10px] md:text-xs text-slate-400 font-mono mt-0.5">
+          Simulateur de monitoring • Ajustez les paramètres puis cliquez sur PARTAGE HL7
+        </p>
+      </div>
+
+      <div className="flex-1 flex flex-col w-full max-w-7xl mx-auto bg-slate-900 border-4 border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+
+        <div className="shrink-0 bg-blue-950/70 border-b border-blue-900/60 py-1.5 px-4 flex flex-wrap items-center justify-between gap-2 text-xs font-mono tracking-wider text-blue-100">
+
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400 font-bold text-[10px] tracking-widest uppercase">Patient :</span>
+            <select value={selectedIdx}
+              onChange={(e) => setSelectedIdx(parseInt(e.target.value))}
+              className="bg-slate-950 border border-slate-700 hover:border-blue-500 rounded px-2 py-0.5 text-sky-400 font-extrabold focus:outline-none focus:border-blue-500 cursor-pointer transition-colors text-[11px]">
+              {patients.length === 0 && <option value={0} className="bg-slate-900 text-white">Chargement...</option>}
+              {patients.map((p, i) => (
+                <option key={i} value={i} className="bg-slate-900 text-white">
+                  {p.patient ? p.patient.prenom + ' ' + p.patient.nom : 'Patient #' + p.sejour_id} — {p.lit ? 'Lit ' + (p.lit.numero_lit || '') : '-'}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button onClick={toggleStreaming}
+              className={'font-extrabold px-3 py-1 rounded-lg flex items-center gap-1.5 transition-all text-[10px] tracking-normal cursor-pointer shadow border ' + (streaming ? 'bg-red-600 hover:bg-red-500 text-white border-red-400/20' : 'bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-500 hover:to-sky-500 text-white border-sky-400/20')}
+              title={streaming ? 'Arrêter le streaming' : 'Démarrer le streaming'}>
+              {streaming ? <StopIcon className="w-3.5 h-3.5" /> : <ShareIcon className="w-3.5 h-3.5 text-sky-200" />}
+              <span>{streaming ? 'ARRÊTER' : 'PARTAGE HL7'}</span>
+              {streaming && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />}
+            </button>
+
+            <div className="hidden md:flex items-center gap-1.5 bg-slate-950/40 px-2 py-0.5 rounded border border-blue-900/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+              <span className="text-emerald-400 font-extrabold text-[9px]">MODE : {ecgFilter.toUpperCase()}</span>
+            </div>
+            <div className="text-slate-300 font-bold text-[11px]">{currentTime}</div>
+          </div>
+        </div>
+
+        {streamMsg && (
+          <div className="bg-slate-950 border-b border-slate-800 py-0.5 px-4 text-center shrink-0">
+            <span className={'text-[9px] font-mono font-bold ' + (streamMsg.includes('OK') ? 'text-emerald-400' : streamMsg.includes('Err') ? 'text-red-400' : 'text-sky-400')}>
+              {streamMsg}
+            </span>
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col bg-black divide-y divide-slate-900 overflow-hidden">
+
+          <div className="flex-1 grid grid-cols-12 min-h-0 relative">
+            <div className="col-span-8 bg-[#050505] relative flex flex-col justify-around p-1 h-full">
+              <div className="absolute top-1.5 left-3 text-[9px] font-bold text-emerald-500 font-mono z-10 flex gap-4">
+                <span className="bg-emerald-950/80 px-1 py-0.2 rounded border border-emerald-800/40">ECG I (x1.0)</span>
+                <span className="bg-emerald-950/80 px-1 py-0.2 rounded border border-emerald-800/40">ECG II (x1.0) HR-Sync</span>
+              </div>
+              <canvas ref={ecgCanvasRef} className="absolute inset-0 w-full h-full block" />
+            </div>
+            <div className={'col-span-4 px-4 py-2 flex flex-col justify-center border-l border-slate-900 h-full transition-colors duration-300 ' + (isFcCritical ? 'bg-red-950/35 animate-pulse' : 'bg-slate-950')}>
+              <div className="flex justify-between items-start text-emerald-500 font-mono text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  <HeartIcon className={'w-3.5 h-3.5 ' + (fc > 0 && !heartFlashed ? 'text-emerald-500' : 'text-red-500')} />
+                  <span className="font-bold tracking-wider">FC / ECG</span>
+                </div>
+                <div className="text-[9px] text-emerald-600 font-bold">Alarme: 130 / 45</div>
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-baseline gap-1">
+                  <EditableValue value={fc} onChange={setFc} min={0} max={220}
+                    className="text-4xl md:text-5xl font-black text-emerald-400 font-mono tracking-tighter drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
+                  <span className="text-xs font-bold text-emerald-600 font-mono">bpm</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => handleFcChange(-5)} className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-xs font-black border border-slate-800 text-emerald-400 cursor-pointer shadow">▼</button>
+                  <button onClick={() => handleFcChange(5)} className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-xs font-black border border-slate-800 text-emerald-400 cursor-pointer shadow">▲</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 grid grid-cols-12 min-h-0 relative">
+            <div className="col-span-8 bg-[#050505] relative flex items-center p-1 h-full">
+              <div className="absolute top-1.5 left-3 text-[9px] font-bold text-red-500 font-mono z-10 flex gap-4">
+                <span className="bg-red-950/80 px-1 py-0.2 rounded border border-red-800/40">ABP mmHg (Invasif)</span>
+                <span className="text-red-500/50">Échelle 0 - 200</span>
+              </div>
+              <canvas ref={abpCanvasRef} className="absolute inset-0 w-full h-full block" />
+            </div>
+            <div className={'col-span-4 px-4 py-2 flex flex-col justify-center border-l border-slate-900 h-full transition-colors duration-300 ' + (isBpCritical ? 'bg-red-950/35 animate-pulse' : 'bg-slate-950')}>
+              <div className="flex justify-between items-start text-red-500 font-mono text-[11px]">
+                <span className="font-bold tracking-wider">ABP (Invasive / Syst-Diast)</span>
+                <div className="text-[9px] text-red-600 font-bold">Alarme: 160/90</div>
+              </div>
+              <div className="flex flex-row items-center justify-between mt-1 gap-2">
+                <div className="flex items-baseline gap-0.5">
+                  <span className="text-3xl md:text-4xl font-black text-red-500 font-mono tracking-tighter drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]">
+                    {fc === 0 ? ('---/---') : (
+                      <><EditableValue value={tas} onChange={handleTasDirect} min={0} max={245} className="text-red-500" />
+                        <span className="mx-0.5 text-red-700/80">/</span>
+                        <EditableValue value={tad} onChange={handleTadDirect} min={0} max={130} className="text-red-500" /></>
+                    )}
+                  </span>
+                  {fc > 0 && <span className="text-[11px] font-bold text-red-600 font-mono ml-0.5">({Math.round(tad + (tas - tad) / 3)})</span>}
+                  <span className="text-[9px] text-red-700 font-bold font-mono ml-0.5">mmHg</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[7px] text-red-400 font-mono font-bold mb-0.5">SYS</span>
+                    <div className="flex gap-0.5">
+                      <button onClick={() => handleTasChange(-5)} className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-xs font-black border border-slate-800 text-red-400 cursor-pointer shadow">▼</button>
+                      <button onClick={() => handleTasChange(5)} className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-xs font-black border border-slate-800 text-red-400 cursor-pointer shadow">▲</button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[7px] text-red-400 font-mono font-bold mb-0.5">DIA</span>
+                    <div className="flex gap-0.5">
+                      <button onClick={() => handleTadChange(-5)} className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-xs font-black border border-slate-800 text-red-400 cursor-pointer shadow">▼</button>
+                      <button onClick={() => handleTadChange(5)} className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-xs font-black border border-slate-800 text-red-400 cursor-pointer shadow">▲</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 grid grid-cols-12 min-h-0 relative">
+            <div className="col-span-8 bg-[#050505] relative flex items-center p-1 h-full">
+              <div className="absolute top-1.5 left-3 text-[9px] font-bold text-cyan-400 font-mono z-10 flex gap-4">
+                <span className="bg-cyan-950/80 px-1 py-0.2 rounded border border-cyan-800/40">SpO2 PLETH</span>
+              </div>
+              <canvas ref={spo2CanvasRef} className="absolute inset-0 w-full h-full block" />
+            </div>
+            <div className={'col-span-4 px-4 py-2 flex flex-col justify-center border-l border-slate-900 h-full transition-colors duration-300 ' + (isSpo2Critical ? 'bg-red-950/35 animate-pulse' : 'bg-slate-950')}>
+              <div className="flex justify-between items-start text-cyan-500 font-mono text-[11px]">
+                <span className="font-bold tracking-wider">SpO2 (Oxymétrie)</span>
+                <div className="text-[9px] text-cyan-600 font-bold">Alarme: &lt; 90%</div>
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-baseline gap-1">
+                  <EditableValue value={spo2} onChange={setSpo2} min={0} max={100}
+                    className="text-4xl md:text-5xl font-black text-cyan-400 font-mono tracking-tighter drop-shadow-[0_0_8px_rgba(6,182,212,0.3)]" />
+                  <span className="text-xs font-bold text-cyan-600 font-mono">%</span>
+                </div>
+                {fc > 0 && (
+                  <div className="h-8 w-5 bg-slate-900 border border-slate-800 rounded flex flex-col justify-end p-0.5">
+                    <div className="w-full bg-cyan-400 transition-all rounded-sm" style={{ height: Math.min(100, (spo2 - 50) * 2) + '%' }} />
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => handleSpo2Change(-1)} className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-xs font-black border border-slate-800 text-cyan-400 cursor-pointer shadow">▼</button>
+                  <button onClick={() => handleSpo2Change(1)} className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-xs font-black border border-slate-800 text-cyan-400 cursor-pointer shadow">▲</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 grid grid-cols-12 min-h-0 relative">
+            <div className="col-span-8 bg-[#050505] relative flex items-center p-1 h-full">
+              <div className="absolute top-1.5 left-3 text-[9px] font-bold text-slate-400 font-mono z-10 flex gap-4">
+                <span className="bg-slate-950/80 px-1 py-0.2 rounded border border-slate-800/40">T1 Température Œsophagienne</span>
+              </div>
+              <canvas ref={tempCanvasRef} className="absolute inset-0 w-full h-full block" />
+            </div>
+            <div className="col-span-4 px-4 py-2 flex flex-col justify-center border-l border-slate-900 bg-slate-950 h-full transition-colors duration-300 hover:bg-slate-900/60">
+              <div className="flex justify-between items-start text-slate-400 font-mono text-[11px]">
+                <span className="font-bold tracking-wider">TEMP (T1)</span>
+                <span className="text-[9px] text-slate-500 font-bold">Référence: T2: {(temp - 0.2).toFixed(1)}</span>
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-baseline gap-1">
+                  <EditableValue value={temp} onChange={setTemp} min={30.0} max={43.0}
+                    className="text-3xl md:text-4xl font-extrabold text-slate-200 font-mono drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]" />
+                  <span className="text-xs font-bold text-slate-500 font-mono">°C</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => handleTempChange(-0.1)} className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-xs font-black border border-slate-800 text-slate-200 cursor-pointer shadow">▼</button>
+                  <button onClick={() => handleTempChange(0.1)} className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-xs font-black border border-slate-800 text-slate-200 cursor-pointer shadow">▲</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div className="shrink-0 bg-slate-900 border-t border-slate-800 p-3 flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-[11px]">
+          <div className="text-slate-400 text-[10px] text-center sm:text-left">
+            Simulateur de surveillance • Ajustez les paramètres via les flèches ou en cliquant sur les chiffres.
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-bold text-slate-500">FILTRAGE :</span>
+            <button onClick={() => setEcgFilter('moniteur')}
+              className={'px-2.5 py-1 rounded text-[10px] font-bold border transition-all cursor-pointer ' + (ecgFilter === 'moniteur' ? 'bg-slate-800 border-slate-600 text-white' : 'bg-slate-950 border-slate-900 text-slate-400 hover:bg-slate-900')}>
+              Filtre Moniteur
+            </button>
+            <button onClick={() => setEcgFilter('diagnostic')}
+              className={'px-2.5 py-1 rounded text-[10px] font-bold border transition-all cursor-pointer ' + (ecgFilter === 'diagnostic' ? 'bg-amber-600 text-white border-amber-500 shadow-sm' : 'bg-slate-950 border-slate-900 text-slate-400 hover:bg-slate-900')}>
+              Diagnostic (Bruit)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
