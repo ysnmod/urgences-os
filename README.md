@@ -7,6 +7,9 @@
 [![WebSockets](https://img.shields.io/badge/Real--Time-WebSockets-010101.svg?style=flat&logo=socketdotio&logoColor=white)](https://websockets.readthedocs.io)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
 
+> **Engineering Graduation Capstone Project (Projet de Fin d'Etudes - PFE)**  
+> Developed at the Higher School of Biomedical Engineering and Health Technologies (ESM6ISS) / UM6SS.
+
 **Urgences OS** is an end-to-end digital health engineering platform designed to optimize real-time patient flow, clinical triage, and bed allocation in hospital emergency departments.
 
 The platform combines a **clinical AI predictive engine**, a **biomedical interoperability gateway (HL7 v2.5.1 ORU^R01)**, and a **real-time reactive WebSocket architecture**.
@@ -194,10 +197,11 @@ MSA|AA|MSG20260814001|Constantes vitales enregistrees avec succes pour sejour 12
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Author & Academic Context
 
-**Yassine ASRI** - State Engineer in Digital Health Engineering  
-*Higher School of Biomedical Engineering and Health Technologies (ESM6ISS) / UM6SS*  
+* **Author:** Yassine ASRI - State Engineer in Digital Health Engineering
+* **Institution:** Higher School of Biomedical Engineering and Health Technologies (ESM6ISS) / UM6SS
+* **Project Type:** Engineering Graduation Capstone Project (Projet de Fin d'Etudes - PFE)
 
 ---
 
