@@ -1,4 +1,4 @@
-# 🏥 Urgences OS — Plateforme Intelligente de Régulation & Triage des Urgences
+# 🏥 Urgences OS - Intelligent Emergency Triage & Hospital Flow Platform
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB.svg?style=flat&logo=Python&logoColor=white)](https://www.python.org)
@@ -7,170 +7,170 @@
 [![WebSockets](https://img.shields.io/badge/Real--Time-WebSockets-010101.svg?style=flat&logo=socketdotio&logoColor=white)](https://websockets.readthedocs.io)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
 
-**Urgences OS** est une plateforme web d'ingénierie e-santé complète conçue pour optimiser en temps réel le flux de patients, le triage clinique et la gestion logistique des lits au sein des services d'urgences hospitaliers.
+**Urgences OS** is an end-to-end digital health engineering platform designed to optimize real-time patient flow, clinical triage, and bed allocation in hospital emergency departments.
 
-Elle associe un **moteur prédictif d'IA clinique**, une **passerelle d'interopérabilité hospitalière (HL7 v2.5.1 ORU^R01)** et une **architecture réactive temps réel par WebSockets**.
+The platform combines a **clinical AI predictive engine**, a **biomedical interoperability gateway (HL7 v2.5.1 ORU^R01)**, and a **real-time reactive WebSocket architecture**.
 
 ---
 
-## 📸 Aperçu de la Plateforme (Interface Utilisateur)
+## 📸 Platform Interface Showcase
 
-### 1. Accueil & Authentification Sécurisée (RBAC)
-| Page d'Accueil & Présentation | Connexion Multi-Rôles (Médecin, Infirmier, Admin) |
+### 1. Welcome & Role-Based Authentication (RBAC)
+| Landing Page & Overview | Multi-Role Login (Doctor, Nurse, Admin) |
 | :---: | :---: |
 | ![Homepage](docs/screenshots/homepage.png) | ![Login](docs/screenshots/loginpage.png) |
 
 ---
 
-### 2. Parcours Patient & Triage Intelligent par IA
-| Module d'Admission & File d'Attente | Triage Clinique & Prédiction CCMU (XGBoost) |
+### 2. Patient Flow & AI-Driven Clinical Triage
+| Patient Admission & Waiting Queue | Clinical Triage & CCMU Prediction (XGBoost) |
 | :---: | :---: |
-| ![Admission](docs/screenshots/module_acceuil.png) | ![Triage IA](docs/screenshots/module_triage.png) |
+| ![Admission](docs/screenshots/module_acceuil.png) | ![AI Triage](docs/screenshots/module_triage.png) |
 
 ---
 
-### 3. Dossier Médical, Soins & Surveillance Continue
-| Dossier Patient, Prescriptions & Examens | Supervision du Monitoring & Alertes Temps Réel |
+### 3. Medical Records, Care & Continuous Monitoring
+| Medical File, Prescriptions & Exams | Real-Time Patient Monitoring & Alerts |
 | :---: | :---: |
-| ![Soins Médicaux](docs/screenshots/module_soins_medical.png) | ![Monitoring](docs/screenshots/module_monitoring.png) |
+| ![Medical Care](docs/screenshots/module_soins_medical.png) | ![Monitoring](docs/screenshots/module_monitoring.png) |
 
 ---
 
-### 4. Pilotage Opérationnel, Gestion des Lits & RH
-| Tableau de Bord Analytique & KPI | Cartographie des Lits en Temps Réel |
+### 4. Operations Dashboard, Bed Tracking & Administration
+| Department KPI & Analytics Dashboard | Real-Time Interactive Bed Map |
 | :---: | :---: |
-| ![Tableau de bord](docs/screenshots/admin_tableaudebord.png) | ![Gestion des Lits](docs/screenshots/admin_ressourceslits.png) |
+| ![Dashboard](docs/screenshots/admin_tableaudebord.png) | ![Bed Management](docs/screenshots/admin_ressourceslits.png) |
 
-| Gestion des Utilisateurs & Habilitations RH |
+| User Management & Staff Permissions |
 | :---: |
-| ![Gestion RH](docs/screenshots/admin_gestionRH.png) |
+| ![HR Management](docs/screenshots/admin_gestionRH.png) |
 
 ---
 
-## 🌟 Fonctionnalités Majeures
+## 🌟 Core Capabilities
 
-* **⚡ Supervision Temps Réel (WebSockets) :** Diffusion bidirectionnelle continue des événements cliniques (admissions, constantes vitales, transferts, alertes de dégradation) sans rechargement manuel.
-* **🩺 Interopérabilité Biomédicale (HL7 v2.5.1) :** Passerelle d'ingestion directe des trames d'observation `ORU^R01` depuis les moniteurs patients (segments `MSH`, `PID`, `PV1`, `OBR`, `OBX` avec codes standards LOINC) et génération d'acquittements normalisés `ACK^R01`.
-* **🧠 Aide à la Décision Clinique par IA :**
-  * **Triage automatique CCMU :** Classification de la gravité clinique (niveaux 1 à 5) par modèle **XGBoost**.
-  * **Détection précoce de détérioration :** Calcul dynamique du risque d'instabilité hémodynamique et respiratoire (inspiré du score **NEWS2**).
-  * **Garde-fous cliniques déterministes :** Règles médicales strictes (ex: plancher de détresse vitale CCMU 5 si Glasgow $\le$ 7 ou $\text{SpO}_2 < 75\%$) encadrant systématiquement les prédictions algorithmiques.
-* **🚑 Coordination Pré-Hospitalière (SAMU/SMUR) :** Transmission anticipée des constantes et du bilan médical depuis les ambulances avant l'arrivée au centre d'urgences.
-* **🛏️ Gestion Dynamique des Lits & Salles :** Cartographie interactive des box de soins, déchocage et hospitalisation courte durée.
-* **📋 Traçabilité & Audit Médical :** Journalisation complète conforme aux exigences de sécurité et traçabilité des actes de soins.
+* **⚡ Real-Time Supervision (WebSockets):** Instant bidirectional broadcast of clinical events (admissions, vitals updates, transfers, critical alerts) without manual page refreshes.
+* **🩺 Healthcare Interoperability (HL7 v2.5.1):** Direct ingestion gateway for `ORU^R01` observation messages from bedside patient monitors (supporting `MSH`, `PID`, `PV1`, `OBR`, `OBX` segments with standard LOINC codes) and automated `ACK^R01` acknowledgments.
+* **🧠 Clinical Decision Support by AI:**
+  * **Automated CCMU Triage:** Clinical severity tier classification (levels 1 to 5) via **XGBoost**.
+  * **Early Deterioration Detection:** Dynamic physiological risk scoring (inspired by the **NEWS2** score) for early warning of hemodynamic or respiratory instability.
+  * **Deterministic Medical Guardrails:** Hard-coded medical rules (e.g. vital distress tier CCMU 5 floor if Glasgow <= 7 or SpO2 < 75%) strictly safeguarding model outputs.
+* **🚑 Pre-Hospital Coordination (SAMU/EMS):** Mobile telemetry and medical summary transmission from ambulances before hospital arrival.
+* **🛏️ Dynamic Bed & Room Management:** Live spatial tracking of triage boxes, resuscitation beds, and short-stay hospitalization units.
+* **📋 Medical Traceability & Audit Log:** Complete event auditing conforming to healthcare data integrity and security standards.
 
 ---
 
-## 🏗️ Architecture du Système
+## 🏗️ System Architecture
 
 ```
                                     +-----------------------------------------+
-                                    |    Moniteurs Patients & Simulateurs     |
-                                    |  (Émission HL7 v2.5.1 ORU^R01 / MLLP)   |
+                                    |     Patient Monitors & Simulators       |
+                                    |  (HL7 v2.5.1 ORU^R01 / MLLP Stream)     |
                                     +-----------------------------------------+
                                                          |
                                                          v
 +-----------------------+           +-----------------------------------------+
-| Interface Web Soignants|<========>|          Serveur Backend FastAPI         |
-|  (SPA React / Babel)  | WebSockets| - Passerelle Interopérabilité HL7 (OBX) |
-|                       |  HTTP REST| - Moteur d'Inférence IA (XGBoost)       |
-+-----------------------+           | - Contrôle d'Accès par Rôles (RBAC)     |
+| Healthcare Web Client |<=========>|          FastAPI Backend Server         |
+|  (React SPA / Babel)  | WebSockets| - HL7 Interoperability Gateway (OBX)    |
+|                       |  HTTP REST| - Clinical AI Inference Engine (XGBoost)|
++-----------------------+           | - Role-Based Access Control (RBAC)      |
                                     +-----------------------------------------+
                                                          |
                                                          v
                                     +-----------------------------------------+
-                                    |   Base de Données Relationnelle / ORM   |
-                                    | (Patients, Séjours, Constantes, Audit)  |
+                                    |       Relational Database / ORM         |
+                                    |  (Patients, Visits, Vitals, Audit Logs) |
                                     +-----------------------------------------+
 ```
 
 ---
 
-## 📁 Structure du Projet
+## 📁 Repository Structure
 
 ```text
 ├── app/
-│   ├── models/            # Modèles SQLAlchemy (Base, Patients, Séjours, Lits, etc.)
-│   ├── routes/            # Points d'accès API (Triage, Monitoring, HL7, Auth, SAMU)
-│   ├── schemas/           # Schémas de validation Pydantic
-│   └── utils/             # Utilitaires & Passerelle/Parser HL7 v2.5.1
+│   ├── models/            # SQLAlchemy ORM models (Patients, Visits, Beds, Vitals, etc.)
+│   ├── routes/            # FastAPI API endpoints (Triage, Monitoring, HL7, Auth, SAMU)
+│   ├── schemas/           # Pydantic data validation schemas
+│   └── utils/             # Utilities and HL7 v2.5.1 parser/generator
 ├── docs/
-│   └── screenshots/       # Captures d'écran de l'interface clinique et administration
+│   └── screenshots/       # Platform interface screenshots
 ├── models/
-│   ├── artifacts/         # Modèles prédictifs sérialisés (XGBoost, Wait Time, NEWS2)
-│   ├── features.py        # Feature engineering clinique (Shock Index, Delta Features)
-│   └── train_ccmu_v2.py   # Pipeline d'entraînement du modèle de triage
+│   ├── artifacts/         # Trained ML model artifacts (XGBoost, Wait Time, NEWS2)
+│   ├── features.py        # Clinical feature engineering (Shock Index, Delta Features)
+│   └── train_ccmu_v2.py   # Model training and validation pipeline
 ├── scripts/
-│   ├── monitor_simulator.py   # Simulateur temps réel de moniteurs multiparamétriques (HL7)
-│   ├── seed_device_bridge.py  # Initialisation du compte de passerelle biomédicale
-│   └── import_medicaments.py  # Import du référentiel médicamenteux
-├── static/                # Librairies frontend locales, polices et styles
-├── app.html               # Application principale de régulation des urgences
-├── simulateur.html        # Interface de monitoring multiparamétrique interactif
-├── run.py                 # Script de démarrage du backend FastAPI
-└── serve.py               # Serveur HTTP pour les interfaces frontend
+│   ├── monitor_simulator.py   # Real-time multi-parameter monitor simulator (HL7)
+│   ├── seed_device_bridge.py  # Biomedical gateway machine account initialization
+│   └── import_medicaments.py  # Medication formulary importer
+├── static/                # Frontend libraries, local fonts, and stylesheets
+├── app.html               # Main hospital emergency coordination application
+├── simulateur.html        # Interactive patient monitor simulator
+├── run.py                 # FastAPI backend entrypoint
+└── serve.py               # Static web server for frontend interfaces
 ```
 
 ---
 
-## 🚀 Démarrage Rapide
+## 🚀 Quickstart Guide
 
-### 1. Prérequis
+### 1. Prerequisites
 
-* Python 3.10 ou supérieur
+* Python 3.10 or higher
 * Git
 
 ### 2. Installation
 
 ```bash
-# Cloner le dépôt
+# Clone the repository
 git clone https://github.com/ysnmod/urgences-os.git
 cd urgences-os
 
-# Créer et activer un environnement virtuel
+# Create and activate virtual environment
 python3 -m venv .venv
-source .venv/bin/activate  # Sur Windows: .venv\Scripts\activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Installer les dépendances
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Initialisation de la Base de Données
+### 3. Database Initialization
 
 ```bash
-# Initialiser les tables et les comptes par défaut
+# Initialize schema and default accounts
 python3 -c "from app.models.base import Base, engine, upgrade_database; from app.routes.main import seed_data; Base.metadata.create_all(bind=engine); upgrade_database(); seed_data()"
 
-# Créer le compte passerelle biomédicale
+# Create biomedical bridge machine account
 python3 scripts/seed_device_bridge.py
 ```
 
-### 4. Lancement de l'Application
+### 4. Running the Platform
 
-Dans deux terminaux séparés :
+In two separate terminal windows:
 
-* **Terminal 1 — Backend FastAPI :**
+* **Terminal 1: FastAPI Backend**
   ```bash
   python3 run.py
-  # API active sur http://127.0.0.1:8000 (Documentation Swagger : http://127.0.0.1:8000/docs)
+  # API live at http://127.0.0.1:8000 (Swagger docs: http://127.0.0.1:8000/docs)
   ```
 
-* **Terminal 2 — Frontend Web :**
+* **Terminal 2: Web Frontend**
   ```bash
   python3 serve.py 3000
-  # Application accessible sur http://localhost:3000/
-  # Simulateur de monitoring : http://localhost:3000/simulateur.html
+  # Main application: http://localhost:3000/
+  # Patient monitor simulator: http://localhost:3000/simulateur.html
   ```
 
 ---
 
-## 📡 Passerelle d'Interopérabilité HL7 (ORU^R01)
+## 📡 HL7 Interoperability Gateway (ORU^R01)
 
-Urgences OS expose un endpoint dédié à l'ingestion de trames biomédicales standardisées :
+Urgences OS exposes an endpoint for standardized biomedical telemetry ingestion:
 
-* **Endpoint :** `POST /api/hl7/oru-r01`
-* **Content-Type :** `text/plain` ou `application/hl7-v2`
-* **Exemple de trame d'observation :**
+* **Endpoint:** `POST /api/hl7/oru-r01`
+* **Content-Type:** `text/plain` or `application/hl7-v2`
+* **Sample Observation Message:**
 
 ```hl7
 MSH|^~\&|MONITOR_PHILIPS_MP50|URGENCES_SIMULATOR|URGENCES_SERVER|CHU_HOSPITAL|20260814213500||ORU^R01|MSG20260814001|P|2.5.1
@@ -185,7 +185,7 @@ OBX|5|NM|8310-5^Body temperature^LN||37.2|Cel|36.0-37.5|N|||F
 OBX|6|NM|9279-1^Respiratory rate^LN||18|/min|12-20|N|||F
 ```
 
-* **Réponse d'acquittement automatique :**
+* **Automated HL7 Acknowledgment:**
 
 ```hl7
 MSH|^~\&|URGENCES_SERVER|CHU_HOSPITAL|MONITOR|URGENCES_OS|20260814213501||ACK^R01|ACK20260814001|P|2.5.1
@@ -194,15 +194,13 @@ MSA|AA|MSG20260814001|Constantes vitales enregistrees avec succes pour sejour 12
 
 ---
 
-## 👨‍💻 Auteur
+## 👨‍💻 Author
 
-**Yassine ASRI** — Ingénieur d'État en Génie Digital en Santé  
-*École Supérieure de Génie Biomédical et des Technologies de la Santé (ESM6ISS) / UM6SS*  
-* GitHub : [@ysnmod](https://github.com/ysnmod)  
-* Email : yassine.asri.2002@gmail.com  
+**Yassine ASRI** - State Engineer in Digital Health Engineering  
+*Higher School of Biomedical Engineering and Health Technologies (ESM6ISS) / UM6SS*  
 
 ---
 
-## 📜 Licence
+## 📜 License
 
-Ce projet est distribué sous licence MIT.
+This project is licensed under the MIT License.
